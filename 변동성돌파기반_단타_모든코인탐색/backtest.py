@@ -3,7 +3,7 @@
 # 3. 어떤 코인을 매수할지 결정한다. 거래량이 많은 것으로 구매한다.
 # 4. 만약 돌파점을 통과한다면 매수 -> 2% 이익시 매도
 # 5. 만약 -1%가 된다면 바로 매도
-# 6. 만약 +2%와 -1% 사이에서 한시간동안 머문다면 매도후 1로 이동, 바로 직전의 코인은 1시간동안 구매하지 않음
+# 6. 만약 +2%와 -1% 사이에서 5분동안 머문다면 매도후 1로 이동
 
 ## 상승장이라면 K 낮게, 하락장은 높게, 배치프로그램 돌려? 또는 수익률이 일정 시간 이상 상승장이면 K를 조금씩 낮춰, 하락이면 k 높여
 import pandas as pd
@@ -11,17 +11,17 @@ import pandas as pd
 
 """ 변수 세팅 """
 # 테스트 날짜 양식: 2024-02-01 , 날짜.xlsx 파일이 있어야함
-test_date = "2024-03-27"
+test_date = "2024-03-14"
 # 거래 수수료
 fee = 0.003
 # 타겟 금액 설정 이전기록의 (고점-저점)*k 만큼의 상승이 일어나면 매수
-k = 0.5
+k = 0.6
 # 타켓 범위 설정 시간 설정 : 1 -> 현재시각과 1시간전 사이의 고점과 저점을 기준으로 계산 , 2면 2시간전
 hour_set = 1
 # 익절 계수: 0.02 -> 2프로 이익시 매도
 plus_set = 0.02
 # 손절 계수: 0.01 -> 1프로 손해시 매도
-minus_set = 0.003
+minus_set = 0.001
 """ 세팅 """
 
 def calculate_target_range(data, current_time, coin, k, hour_set):
@@ -89,11 +89,11 @@ for current_time, group in df.groupby('index'):
     else:
         # 매도 조건 확인
         # 현재 금액이 구입가의 102%이상이면 매도
-        # 만약 buytime이후 한시간이 지났다면 매도
+        # 만약 buytime이후 5분이 지났다면 매도
         # 1% 하락하면 매도
         try:
             row = group[group['Coin'] == buy_coin].iloc[0]
-            if row['open'] >= buy_price * (1+plus_set) or current_time >= buy_time + pd.Timedelta(hours=1) or row[
+            if row['open'] >= buy_price * (1+plus_set) or current_time >= buy_time + pd.Timedelta(minutes=5) or row[
                 'open'] <= buy_price * (1-minus_set):
                 is_buy = False
                 result.append({'time': current_time, 'action': 'sell', 'coin': buy_coin,
