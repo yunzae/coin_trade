@@ -2,8 +2,8 @@ import time
 import pyupbit
 import datetime
 
-access = "ㅁ"
-secret = "ㅁ"
+access = "wbyuJ8ZziemhGZrHHP2fry76hXPDtzjp9ONQWLpJ"
+secret = "XdTZixRSmdsbmUERV85cMambFBYo3flmmYaByPvc"
 
 
 def get_target_price(ticker, k):
@@ -56,6 +56,7 @@ def sell(coin):
     coin_held = get_balance(coin.split("-")[1])
     if coin_held > 0.00008:
         order_result = upbit.sell_market_order(coin, coin_held)
+        print("-------------------sell---------------------")
         if 'uuid' in order_result:
             order_uuid = order_result['uuid']
             time.sleep(1)  # API 요청 사이에 약간의 지연을 추가
