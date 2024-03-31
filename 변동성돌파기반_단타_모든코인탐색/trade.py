@@ -2,8 +2,8 @@ import time
 import pyupbit
 import datetime
 
-access = "wbyuJ8ZziemhGZrHHP2fry76hXPDtzjp9ONQWLpJ"
-secret = "XdTZixRSmdsbmUERV85cMambFBYo3flmmYaByPvc"
+access = "a"
+secret = "a"
 
 
 def get_target_price(ticker, k):
@@ -128,7 +128,7 @@ while True:
                 if executed_price:
                     is_buy = True
                     buy_coin = target_coin
-                    buy_price = float(executed_price)  # 체결 가격을 실수형으로 변환하여 저장
+                    buy_price = float(executed_price)*(1+fee)  # 체결 가격을 실수형으로 변환하여 저장
                     buy_time = datetime.datetime.now()
                     print("구입 코인: ", buy_coin)
                     print("구매 가격: ", buy_price )
@@ -149,7 +149,7 @@ while True:
             # 1% 하락하면 매도
 
             if((current_price >= buy_price * (1+plus_set)) or (current_time >= buy_time + datetime.timedelta(minutes=5)) or (current_price <= buy_price*(1-minus_set))):
-                executed_price = sell(buy_coin)
+                executed_price = sell(buy_coin)*(1-fee)
                 if( executed_price ):
                     print("판매 코인: ", buy_coin)
                     print("구매 가격: ", buy_price)
