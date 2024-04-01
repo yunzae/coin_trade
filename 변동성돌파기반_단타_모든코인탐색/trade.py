@@ -2,22 +2,21 @@ import time
 import pyupbit
 import datetime
 
-access = "a"
-secret = "a"
+access = "ㅁ"
+secret = "ㅁ"
 
 
 def get_target_price(ticker, k):
     """변동성 돌파 전략으로 매수 목표가 조회"""
     """거래량 변화율 구하기"""
     # 1시간전 기록을 기준으로 타켓금액 설정
-    df = pyupbit.get_ohlcv(ticker, interval="minute60", count=2)
+    df = pyupbit.get_ohlcv(ticker, interval="minute240", count=2)
     target_price = df.iloc[0]['close'] + (df.iloc[0]['high'] - df.iloc[0]['low']) * k
     if(df.iloc[0]['volume']==0):
         dv = 0
     else:
         dv = (df.iloc[1]['volume'] - df.iloc[0]['volume']) / df.iloc[0]['volume']
     return target_price, dv
-
 
 def get_balance(ticker):
     """잔고 조회"""
@@ -30,11 +29,9 @@ def get_balance(ticker):
                 return 0
     return 0
 
-
 def get_current_price(ticker):
     """현재가 조회"""
     return pyupbit.get_orderbook(ticker=ticker)["orderbook_units"][0]["ask_price"]
-
 
 def buy(coin):
     krw = get_balance("KRW")
@@ -51,6 +48,7 @@ def buy(coin):
     else:
         print("구매 실패: 자금 부족")
         return None
+
 
 def sell(coin):
     coin_held = get_balance(coin.split("-")[1])
@@ -76,17 +74,17 @@ def sell(coin):
     else:
         print("보유한 코인이 충분하지 않습니다.")
         return None
-
 """ 변수 세팅 """
 # 거래 수수료
 fee = 0.0005
 # 타겟 금액 설정 이전기록의 (고점-저점)*k 만큼의 상승이 일어나면 매수
 k = 0.6
-
 # 익절 계수: 0.02 -> 2프로 이익시 매도
-plus_set = 0.02
+plus_set = 0.005
 # 손절 계수: 0.01 -> 1프로 손해시 매도
-minus_set = 0.001
+minus_set = 0.005
+# 매도 후 매수 금지 시간(예: 1시간)을 설정합니다.
+no_buy_duration = datetime.timedelta(hours=4)
 """ 변수 세팅 """
 
 # 초기 상태 설정
@@ -96,6 +94,9 @@ buy_price = 0
 buy_time = None
 coins = pyupbit.get_tickers(fiat="KRW")
 profit=1
+# 매도한 코인의 매수 금지 시간을 저장할 딕셔너리
+no_buy_coins = {}
+
 
 # 로그인
 upbit = pyupbit.Upbit(access, secret)
@@ -110,6 +111,8 @@ while True:
             target_price=0
             # 모든 코인 반복물 돌면서 타켓가격을 넘긴 코인중 거래변화량이 가장 큰 코인을 선택
             for coin in coins:
+                if coin in no_buy_coins and datetime.datetime.now() - no_buy_coins[coin] < no_buy_duration:
+                    continue  # 매수 금지 기간인 코인은 건너뜁니다.
                 # 해당 시간 기준 한시간 전부터 지금까지의 고점,저점을 찾기 -> 돌파기준범위 계산(고점-저가) *k값
                 # 거래량 증가율 계산 # 거래량 증가률 = (현재거래량-이전분의 거래량)/이전분의 거래량
                 price, dv = get_target_price(coin, k)
@@ -162,8 +165,10 @@ while True:
                     profit *= executed_price/buy_price
                     print("누적 수익률: ", (profit-1)*100,"%")
                     print()
+                    no_buy_coins[buy_coin] = current_time
                     is_buy = False
                     buy_coin = None
+
 
         time.sleep(1)
     except Exception as e:
